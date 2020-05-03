@@ -70,9 +70,9 @@
   (cn-num--convert-chinese-to-arabic-iter chinese-number 0 cn-num--high-weight-alist (- (length cn-num--high-weight-alist) 1) 'cn-num--convert-chinese-to-arabic-small-than-10000))
 
 (defun cn-num--convert-arabic-to-chinese-iter (arabic-number result weight-alist weight-index over-weight-convertor zero-prefix)
-  ;;(cn-num--trace-log "call cn-num--convert-arabic-to-chinese-iter with param: arabic-number=%d, result=%s, weight-alist=%s, weight-index=%d, over-weight-convertor=%s, zero-prefix=%s."
-	   ;;arabic-number result weight-alist weight-index over-weight-convertor zero-prefix)
-  (if (= 0 arabic-number)
+  (message "call cn-num--convert-arabic-to-chinese-iter with param: arabic-number=%d, result=%s, weight-alist=%s, weight-index=%d, over-weight-convertor=%s, zero-prefix=%s."
+	   arabic-number result weight-alist weight-index over-weight-convertor zero-prefix)
+  (if (< weight-index 0)
       result
       (let* ((weight-at-index (nth weight-index weight-alist))
 	     (quotient (/ arabic-number (expt 10 (cdr weight-at-index))))
@@ -81,28 +81,32 @@
         (if (= 0 quotient)
           (cn-num--convert-arabic-to-chinese-iter
             arabic-number
-            (if (string-match-p "零$" result)
-              result     
-              (if (= 0 (length result))
-	        (if zero-prefix "零" result)
-                (concat result "零")))
+	    (concat result "零")
             weight-alist
             (- weight-index 1)
             over-weight-convertor
             zero-prefix)
-          (cn-num--convert-arabic-to-chinese-iter
-            remainder
-            (concat result (funcall over-weight-convertor quotient (< 0 (length result))) (car weight-at-index))
-            weight-alist
-            (- weight-index 1)
-            over-weight-convertor
-            zero-prefix)))))
+          (let ((newresult (concat result (funcall over-weight-convertor quotient (< 0 (length result))) (car weight-at-index))))
+            (cn-num--convert-arabic-to-chinese-iter
+              remainder
+	      newresult
+              weight-alist
+              (- weight-index 1)
+              over-weight-convertor
+              (< 0 (length newresult))))))))
+
+(defun cn-num--compress-chinese-zero(chinese-number)
+  (message "compress-chinese-zero: %s." chinese-number)
+  (let ((after-compress
+    (replace-regexp-in-string "零+" "零" (replace-regexp-in-string "^零+\\([^零]\\)\\(.*\\)$" "\\1\\2" (replace-regexp-in-string "\\(.*\\)\\([^零]\\)零+$" "\\1\\2" chinese-number)))))
+    (message "after-compress: %s." after-compress)
+    after-compress))
           	 
 (defun cn-num--convert-arabic-to-chinese-small-than-10000 (chinese-number &optional zero-prefix)
-  (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--weight-alist (- (length cn-num--weight-alist) 1) (lambda (x y) (cn-num--get-chinese-digit x)) zero-prefix))
+  (cn-num--compress-chinese-zero (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--weight-alist (- (length cn-num--weight-alist) 1) (lambda (x y) (cn-num--get-chinese-digit x)) zero-prefix)))
 
 (defun cn-num--convert-arabic-to-chinese (chinese-number)
-  (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--high-weight-alist (- (length cn-num--high-weight-alist) 1) (lambda (x y) (cn-num--convert-arabic-to-chinese-small-than-10000 x y)) nil))
+  (cn-num--compress-chinese-zero (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--high-weight-alist (- (length cn-num--high-weight-alist) 1) (lambda (x y) (cn-num--convert-arabic-to-chinese-small-than-10000 x y)) nil)))
 ;;(cn-num--convert-chinese-to-arabic-small-than-10000 "七百八十")
 ;;(cn-num--convert-chinese-to-arabic-small-than-10000 "一千零五")
 ;;(cn-num--convert-chinese-to-arabic-small-than-10000 "三千零二十")
