@@ -1,4 +1,66 @@
+;;; cn-num.el --- Convert numbers between Arabic and Chinese formats
 
+;; * Header
+;; Copyright (c) 2015, zhcosin
+;; Author: zhcosin<zhcosin@163.com>
+;; URL: https://github.com/zhcosin/chinese-number
+;; Created: 2020-05-03
+
+;;; License:
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License
+;; as published by the Free Software Foundation; either version 3
+;; of the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;; cn-num is a package for converting number format between
+;; Arabic and Chinese.
+;;
+;; If you want to convert a Arabic number to chinese, you can:
+;;
+;;     M-x cn-num--convert-arabic-number-to-chinese
+;;
+;; and input the Arabic number, or you may want to convert a number
+;; from Chinese to Arabic, you can:
+;;
+;;     M-x cn-num--convert-chinese-number-to-arabic
+;;
+;; If you want use this converting in your elisp code, then you can
+;; call the following two function:
+;;
+;;     cn-num--convert-arabic-to-chinese
+;;
+;; and
+;;
+;;     cn-num--convert-chinese-to-arbic
+;;
+;;; Installation:
+;;
+;; Chinese-number lives in a Git repository. To obtain it, do
+;;
+;;     git clone https://github.com/zhcosin/cn-num.git
+;;
+;; Move directory cn-num to ~/.emacs.d/cn-num (or somewhere
+;; else in the `load-path'). Then add the following lines to ~/.emacs:
+;;
+;;     (add-to-list 'load-path "~/.emacs.d/cn-num")
+;;     (require 'cn-num)
+;;
+;;; Code:
 
 (defvar cn-num--digit-alist '(("零" . 0) ("一" . 1) ("二" . 2) ("三" . 3) ("四" . 4) ("五" . 5) ("六" . 6) ("七" . 7) ("八" . 8) ("九" . 9)))
 (defvar cn-num--weight-alist '(("" . 0) ("十" . 1) ("百" . 2) ("千" . 3)))
@@ -64,9 +126,9 @@
 (defun cn-num--convert-chinese-to-arbic (chinese-number)
   (cn-num--convert-chinese-to-arabic-iter chinese-number 0 cn-num--high-weight-alist (- (length cn-num--high-weight-alist) 1) 'cn-num--convert-chinese-to-arabic-small-than-10000))
 
-(defun cn-num--convert-arabic-to-chinese-iter (arabic-number result weight-alist weight-index over-weight-convertor zero-prefix)
-  (message "call cn-num--convert-arabic-to-chinese-iter with param: arabic-number=%d, result=%s, weight-alist=%s, weight-index=%d, over-weight-convertor=%s, zero-prefix=%s."
-	   arabic-number result weight-alist weight-index over-weight-convertor zero-prefix)
+(defun cn-num--convert-arabic-to-chinese-iter (arabic-number result weight-alist weight-index over-weight-convertor)
+  (message "call cn-num--convert-arabic-to-chinese-iter with param: arabic-number=%d, result=%s, weight-alist=%s, weight-index=%d, over-weight-convertor=%s."
+	   arabic-number result weight-alist weight-index over-weight-convertor)
   (if (< weight-index 0)
       result
       (let* ((weight-at-index (nth weight-index weight-alist))
@@ -79,16 +141,14 @@
 	    (concat result "零")
             weight-alist
             (- weight-index 1)
-            over-weight-convertor
-            zero-prefix)
+            over-weight-convertor)
           (let ((newresult (concat result (funcall over-weight-convertor quotient) (car weight-at-index))))
             (cn-num--convert-arabic-to-chinese-iter
               remainder
 	      newresult
               weight-alist
               (- weight-index 1)
-              over-weight-convertor
-              (< 0 (length newresult))))))))
+              over-weight-convertor))))))
 
 (defun cn-num--compress-chinese-zero(chinese-number enable-zero-prefix)
   (message "compress-chinese-zero: %s." chinese-number)
@@ -101,9 +161,23 @@
     after-compress))
           	 
 (defun cn-num--convert-arabic-to-chinese-small-than-10000 (chinese-number &optional zero-prefix)
-  (cn-num--compress-chinese-zero (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--weight-alist (- (length cn-num--weight-alist) 1) 'cn-num--get-chinese-digit zero-prefix) zero-prefix))
+  (cn-num--compress-chinese-zero (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--weight-alist (- (length cn-num--weight-alist) 1) 'cn-num--get-chinese-digit) zero-prefix))
 
 (defun cn-num--convert-arabic-to-chinese (chinese-number)
-  (cn-num--compress-chinese-zero (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--high-weight-alist (- (length cn-num--high-weight-alist) 1) (lambda (x) (cn-num--convert-arabic-to-chinese-small-than-10000 x t)) nil) nil))
+  (cn-num--compress-chinese-zero (cn-num--convert-arabic-to-chinese-iter chinese-number "" cn-num--high-weight-alist (- (length cn-num--high-weight-alist) 1) (lambda (x) (cn-num--convert-arabic-to-chinese-small-than-10000 x t))) nil))
+
+;;;###autoload
+(defun cn-num--convert-arabic-number-to-chinese (arabic-number)
+  ;; 将阿拉伯数字转换为中文
+  "convert a number in Arabic format to Chinese."
+  (interactive "nInput the Arabic number: ")
+  (message "%d = %s" arabic-number (cn-num--convert-arabic-to-chinese arabic-number)))
+
+;;;###autoload
+(defun cn-num--convert-chinese-number-to-arabic (chinese-number)
+  ;; 将中文数字转换为阿拉伯数字
+  "convert a number in Chinese format to Arabic."
+  (interactive "sInput the Chinese number: ")
+  (message "%s = %d" chinese-number (cn-num--convert-chinese-to-arbic chinese-number)))
 
 (provide 'cn-num)
