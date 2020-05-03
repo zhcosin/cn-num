@@ -1,0 +1,51 @@
+
+#+TITLE: 阿拉伯数字与中文数字之间相互转换
+#+AUTHOR: zhcosin<zhcosin@163.com>
+#+DATETIME: 2020-05-03
+
+* 简介
+  
+=cn-num= 是一个用来提供阿拉伯数字与（简体）中文数字之间相互转换的 =elisp= 包，它提供了以下特性:
+1. 将阿拉伯数字转换为中文(反向转换暂未实现)。
+1. 中文数字支持大小写。
+
+* 使用
+
+** 安装
+   
+ =cn-num= 托管在 =GitHub= 上，可以手工安装它，先使用如下 =Git= 命令克隆到本地:
+#+BEGIN_SRC sh
+git clone https://github.com/zhcosin/cn-num.git
+#+END_SRC
+然后将目录移动到你的 =emacs= 配置目录:
+#+BEGIN_SRC sh
+mv cn-num ~/.emacs.d/cn-num
+#+END_SRC
+
+
+** 配置
+   
+=cn-num= 的配置相当简单，把下面代码放置到 =.emacs= 文件中:
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/cn-num")
+(require 'cn-num)
+#+END_SRC
+
+** 阿拉伯数字与中文数字之间相互转换
+   
+要将阿拉伯数字转换为中文，可以使用如下命令:
+#+BEGIN_SRC
+cn-num--convert-arabic-number-to-chinese
+#+END_SRC
+而下面这个命令则可以完成反向的转换
+#+BEGIN_SRC
+cn-num--convert-chinese-number-to-arabic
+#+END_SRC
+如果想要在 =elisp= 代码中使用这样的数字转换，可以调用如下这两个函数:
+#+BEGIN_SRC
+cn-num--convert-arabic-to-chinese
+cn-num--convert-chinese-to-arbic
+#+END_SRC
+
+  
+  文档结束处。
